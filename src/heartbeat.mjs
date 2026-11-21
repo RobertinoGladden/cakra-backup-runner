@@ -7,5 +7,6 @@ export async function signalMonitor(endpoint,event,fetchImpl=fetch){
  else if(event==='fail')url.pathname+='/fail';
  else if(event!=='success')throw new Error('Unknown backup monitor event');
  const response=await fetchImpl(url,{method:'POST',redirect:'manual',signal:AbortSignal.timeout(10_000)});
- if(!response.ok)throw new Error('Backup monitor signal failed');
+ // The ping API also uses HTTP 200 for unknown checks and rate-limited pings.
+ if(response.status!==200||(await response.text()).trim()!=='OK')throw new Error('Backup monitor signal was not accepted');
 }
