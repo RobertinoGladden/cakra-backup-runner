@@ -1,5 +1,5 @@
 # INACTIVE REVIEW TEMPLATE. Do not install until owner separately approves
-# the production database role, secrets, monitor and first manual acceptance.
+# scheduling after manual acceptance, monitored execution and recovery review.
 name: production-backup
 on:
   workflow_dispatch:
