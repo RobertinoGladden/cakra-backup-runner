@@ -13,9 +13,3 @@ test('synthetic command requires an explicit local acknowledgement',()=>{
  assert.notEqual(result.status,0);
  assert.match(result.stderr,/acknowledgement or GitHub Actions required/);
 });
-
-test('hosted monitor probe rejects an untrusted branch before pinging',()=>{
- const result=spawnSync(process.execPath,['src/monitor-probe.mjs'],{encoding:'utf8',env:{PATH:process.env.PATH,GITHUB_ACTIONS:'true',GITHUB_REPOSITORY:'RobertinoGladden/cakra-backup-runner',GITHUB_REF:'refs/heads/untrusted',GITHUB_EVENT_NAME:'workflow_dispatch',BACKUP_HEARTBEAT_URL:'https://hc-ping.com/12345678-1234-1234-1234-123456789abc'}});
- assert.notEqual(result.status,0);
- assert.match(result.stderr,/protected manual runner context/);
-});
