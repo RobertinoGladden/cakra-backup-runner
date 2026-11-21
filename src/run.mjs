@@ -7,17 +7,18 @@ import {spawn} from 'node:child_process';
 import {Readable} from 'node:stream';
 import {DriveStore} from './drive.mjs';
 import {decryptBuffer,encryptStream} from './envelope.mjs';
-import {signalMonitor} from './heartbeat.mjs';
+import {requiresFreshnessSignal,signalMonitor} from './heartbeat.mjs';
 import {verifySupabaseCertificate} from './certificate.mjs';
 
 const mode=process.argv[2];
 const postgresImage='postgres@sha256:b60e90042aa6b8dbecd58e224b3e36114dbf8ad754465264c2476ad58a86e45c';
 if(!['synthetic','production'].includes(mode))throw new Error('Choose synthetic or production mode');
 const github=process.env.GITHUB_ACTIONS==='true';
+const monitorRequired=requiresFreshnessSignal(mode,process.env.GITHUB_EVENT_NAME);
 if(!github&&!(mode==='synthetic'&&process.env.BACKUP_LOCAL_SYNTHETIC_ACK==='DISPOSABLE_ONLY'))throw new Error('Owner-local synthetic acknowledgement or GitHub Actions required');
 if(mode==='production'){
  if(process.env.BACKUP_PRODUCTION_ENABLE!=='OWNER_APPROVED'||process.env.GITHUB_REPOSITORY!=='RobertinoGladden/cakra-backup-runner'||process.env.GITHUB_REF!=='refs/heads/main'||!['schedule','workflow_dispatch'].includes(process.env.GITHUB_EVENT_NAME))throw new Error('Production backup execution context not approved');
- if(!process.env.BACKUP_HEARTBEAT_URL)throw new Error('Independent backup monitor required');
+ if(monitorRequired&&!process.env.BACKUP_HEARTBEAT_URL)throw new Error('Independent backup monitor required for scheduled backups');
 }
 const needed=['DRIVE_CLIENT_ID','DRIVE_CLIENT_SECRET','DRIVE_REFRESH_TOKEN','DRIVE_FOLDER_ID','DRIVE_FOLDER_NAME','DRIVE_FOLDER_MARKER','DRIVE_OWNER_EMAIL'];
 for(const key of needed)if(!process.env[key])throw new Error(`Missing runner input: ${key}`);
@@ -32,7 +33,7 @@ const archive=join(dir,archiveName),manifestPath=join(dir,manifestName);
 let syntheticPrivateKey=null,syntheticPayload=null;
 const started=Date.now();
 try{
- if(mode==='production')await signalMonitor(process.env.BACKUP_HEARTBEAT_URL,'start');
+ if(monitorRequired)await signalMonitor(process.env.BACKUP_HEARTBEAT_URL,'start');
  await drive.verifyDestination();
  let source,publicKey,sourceRef,exit;
  if(mode==='synthetic'){
@@ -68,10 +69,10 @@ try{
   const downloaded=await drive.download(saved.id);
   if(createHash('sha256').update(downloaded).digest('hex')!==sealed.encryptedSha256||!decryptBuffer(downloaded,syntheticPrivateKey).equals(syntheticPayload))throw new Error('Synthetic recovery mismatch');
  }
- if(mode==='production')await signalMonitor(process.env.BACKUP_HEARTBEAT_URL,'success');
+ if(monitorRequired)await signalMonitor(process.env.BACKUP_HEARTBEAT_URL,'success');
  process.stdout.write(JSON.stringify({result:'PASS',mode,runId,archiveId:saved.id,manifestId:receipt.id,encryptedBytes:sealed.encryptedBytes,readbackVerified:true,syntheticRecovery:mode==='synthetic',elapsedSeconds:Math.round((Date.now()-started)/1000)})+'\n');
 }catch{
- if(mode==='production')try{await signalMonitor(process.env.BACKUP_HEARTBEAT_URL,'fail');}catch{}
+ if(monitorRequired)try{await signalMonitor(process.env.BACKUP_HEARTBEAT_URL,'fail');}catch{}
  process.stderr.write(`CAKRA ${mode} backup FAILED; inspect restricted runner telemetry.\n`);
  process.exitCode=1;
 }finally{
