@@ -1,5 +1,5 @@
-# INACTIVE REVIEW TEMPLATE. Do not install until owner separately approves
-# scheduling after manual acceptance, monitored execution and recovery review.
+# Historical review template only. The approved active schedule is in
+# .github/workflows/production-backup-scheduled.yml; do not install this copy.
 name: production-backup
 on:
   workflow_dispatch:
