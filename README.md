@@ -12,9 +12,11 @@ This public repository contains only generic backup tooling. It contains no CAKR
 
 ## Current acceptance state
 
-The repository starts with synthetic boundary testing only. A successful GitHub environment run proves a disposable secret was available on the protected branch; a rejected run from another branch proves the branch policy. Neither proves that production credentials are safe until branch protection, workflow review, OAuth client type, alerting, and recovery have been accepted.
+The protected branch and environment have passed a disposable-secret boundary test. The `synthetic-drive` workflow is manual, uses the environment's dedicated Web OAuth grant, and handles only generated random bytes. It checks encrypted upload, Drive readback, download, decryption, and exact cleanup. No database credential is connected.
 
-The backup schedule must be paired with an **independent** freshness monitor and delivered owner alert. GitHub scheduled events can be delayed or dropped; cron alone is not an RPO guarantee. Keep the backup workflow template inactive until that monitor is configured and tested.
+The repository is owned by one person. GitHub Free permits protected branches and environment secrets here, but there is no independent reviewer. Compromise of that owner's account could change workflow code or protection settings and expose environment secrets. The owner must maintain strong GitHub MFA and review every workflow change. This risk persists until a separate approver can be required.
+
+The backup schedule must be paired with an **independent** freshness monitor and delivered owner alert. The production command fails closed without a Healthchecks.io ping URL, signals start/success/failure, and emits no database data to that service. The URL must be an environment secret and the owner must approve that external monitor and confirm a received test alert. The [Healthchecks.io Hobbyist plan](https://healthchecks.io/pricing/) currently offers a free tier, but it is not configured. GitHub scheduled events can be delayed or dropped; cron alone is not an RPO guarantee. Keep the backup workflow template inactive until monitoring is configured and tested.
 
 ## Local verification
 

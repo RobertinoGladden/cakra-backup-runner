@@ -1,0 +1,31 @@
+name: synthetic-drive
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: synthetic-drive
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.repository == 'RobertinoGladden/cakra-backup-runner' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: production-backup
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Encrypted synthetic Drive recovery
+        env:
+          DRIVE_CLIENT_ID: ${{ secrets.DRIVE_CLIENT_ID }}
+          DRIVE_CLIENT_SECRET: ${{ secrets.DRIVE_CLIENT_SECRET }}
+          DRIVE_REFRESH_TOKEN: ${{ secrets.DRIVE_REFRESH_TOKEN }}
+          DRIVE_FOLDER_ID: ${{ vars.DRIVE_FOLDER_ID }}
+          DRIVE_FOLDER_NAME: ${{ vars.DRIVE_FOLDER_NAME }}
+          DRIVE_FOLDER_MARKER: ${{ vars.DRIVE_FOLDER_MARKER }}
+          DRIVE_OWNER_EMAIL: ${{ vars.DRIVE_OWNER_EMAIL }}
+        run: node src/run.mjs synthetic
