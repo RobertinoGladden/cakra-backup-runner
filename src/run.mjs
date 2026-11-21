@@ -1,4 +1,4 @@
-/** Generic backup executor. No production workflow or credential is installed yet. */
+/** Generic backup executor. Production execution needs a protected manual workflow. */
 import {createHash,generateKeyPairSync,randomBytes} from 'node:crypto';
 import {mkdtempSync,readFileSync,realpathSync,rmSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
