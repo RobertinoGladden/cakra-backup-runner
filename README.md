@@ -8,6 +8,7 @@ This public repository contains only generic backup tooling. It contains no CAKR
 - The `validate` workflow accepts pull requests but has no environment, secrets, write token, backup command, or external-data access. No `pull_request_target` or `workflow_run` triggers are used.
 - The actual backup schedule is an **inactive template** under `templates/`. Moving it into `.github/workflows/` and setting production secrets requires separate owner approval and a reviewed change. Do not use repository-level secrets for backup credentials.
 - The encryption recipient is an RSA-3072+ **public** key supplied at execution time and checked against a separately pinned SHA-256. The private recovery key never enters this runner. Backups use a fresh AES-256-GCM data key wrapped with RSA-OAEP-SHA256.
+- The PostgreSQL client uses `sslmode=verify-full` with the bundled public Supabase Root 2021 CA. Its DER SHA-256 fingerprint is pinned in code and checked before export. The CA file is mounted read-only into the pinned PostgreSQL 17 container. A missing, changed or expired root aborts the backup.
 - Google Drive access is limited to the owner-approved app-owned folder through `drive.file`; the code checks folder ID, name, owner, private status, and app marker before upload. Uploaded bytes are read back and SHA-256 checked. Automatic deletion is absent.
 
 ## Current acceptance state

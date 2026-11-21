@@ -8,6 +8,7 @@ import {Readable} from 'node:stream';
 import {DriveStore} from './drive.mjs';
 import {decryptBuffer,encryptStream} from './envelope.mjs';
 import {signalMonitor} from './heartbeat.mjs';
+import {verifySupabaseCertificate} from './certificate.mjs';
 
 const mode=process.argv[2];
 const postgresImage='postgres@sha256:b60e90042aa6b8dbecd58e224b3e36114dbf8ad754465264c2476ad58a86e45c';
@@ -49,8 +50,9 @@ try{
   const fingerprint=createHash('sha256').update(publicKey).digest('hex');
   if(!/^[a-f0-9]{64}$/i.test(process.env.RECIPIENT_PUBLIC_KEY_SHA256)||fingerprint!==process.env.RECIPIENT_PUBLIC_KEY_SHA256.toLowerCase())throw new Error('Recipient public key fingerprint mismatch');
   sourceRef=process.env.BACKUP_SOURCE_ID;
-  const env={...process.env,PGHOST:database.hostname,PGPORT:database.port||'5432',PGUSER:user,PGPASSWORD:decodeURIComponent(database.password),PGDATABASE:name,PGSSLMODE:'require'};
-  const args=['run','--rm','--pull=never','-e','PGHOST','-e','PGPORT','-e','PGUSER','-e','PGPASSWORD','-e','PGDATABASE','-e','PGSSLMODE',postgresImage,'pg_dump','--format=custom','--no-owner','--no-large-objects','--schema=public','--schema=auth','--schema=storage','--schema=supabase_migrations'];
+  const caPath=verifySupabaseCertificate();
+  const env={...process.env,PGHOST:database.hostname,PGPORT:database.port||'5432',PGUSER:user,PGPASSWORD:decodeURIComponent(database.password),PGDATABASE:name,PGSSLMODE:'verify-full',PGSSLROOTCERT:'/etc/ssl/certs/supabase-prod-ca-2021.crt'};
+  const args=['run','--rm','--pull=never','--mount',`type=bind,src=${caPath},dst=${env.PGSSLROOTCERT},readonly`,'-e','PGHOST','-e','PGPORT','-e','PGUSER','-e','PGPASSWORD','-e','PGDATABASE','-e','PGSSLMODE','-e','PGSSLROOTCERT',postgresImage,'pg_dump','--format=custom','--no-owner','--no-large-objects','--schema=public','--schema=auth','--schema=storage','--schema=supabase_migrations'];
   const dump=spawn('docker',args,{env,stdio:['ignore','pipe','pipe']});
   dump.stderr.resume();source=dump.stdout;
   exit=new Promise((resolve,reject)=>{dump.once('error',reject);dump.once('close',resolve);});
