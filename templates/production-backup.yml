@@ -41,4 +41,5 @@ jobs:
           DRIVE_FOLDER_NAME: ${{ vars.DRIVE_FOLDER_NAME }}
           DRIVE_FOLDER_MARKER: ${{ vars.DRIVE_FOLDER_MARKER }}
           DRIVE_OWNER_EMAIL: ${{ vars.DRIVE_OWNER_EMAIL }}
+          BACKUP_HEARTBEAT_URL: ${{ secrets.BACKUP_HEARTBEAT_URL }}
         run: node src/run.mjs production
