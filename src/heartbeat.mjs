@@ -1,4 +1,8 @@
 /** Independent missing-run monitor. Endpoint is a secret; never print it. */
+export function requiresFreshnessSignal(mode,event){
+ return mode==='production'&&event==='schedule';
+}
+
 export async function signalMonitor(endpoint,event,fetchImpl=fetch){
  let url;
  try{url=new URL(endpoint);}catch{throw new Error('Backup monitor endpoint invalid');}

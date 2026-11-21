@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {signalMonitor} from '../src/heartbeat.mjs';
+import {requiresFreshnessSignal,signalMonitor} from '../src/heartbeat.mjs';
+
+test('only scheduled production jobs activate the freshness monitor',()=>{
+ assert.equal(requiresFreshnessSignal('production','schedule'),true);
+ assert.equal(requiresFreshnessSignal('production','workflow_dispatch'),false);
+ assert.equal(requiresFreshnessSignal('synthetic','workflow_dispatch'),false);
+});
 
 test('monitor sends start, success and failure without data or redirects',async()=>{
  const urls=[];
