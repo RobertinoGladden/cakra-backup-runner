@@ -1,0 +1,44 @@
+# REVIEW ONLY: This workflow is inert until merged into protected main.
+# No schedule is installed. The first run needs separate owner authorization.
+name: production-backup-manual
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: production-backup
+  cancel-in-progress: false
+jobs:
+  backup:
+    if: github.repository == 'RobertinoGladden/cakra-backup-runner' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment: production-backup
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Fetch pinned PostgreSQL 17 client image
+        run: docker pull postgres@sha256:b60e90042aa6b8dbecd58e224b3e36114dbf8ad754465264c2476ad58a86e45c
+      - name: Encrypted backup, Drive readback and manifest
+        env:
+          BACKUP_PRODUCTION_ENABLE: OWNER_APPROVED
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          BACKUP_EXPECTED_HOST: ${{ vars.BACKUP_EXPECTED_HOST }}
+          BACKUP_EXPECTED_USER: ${{ vars.BACKUP_EXPECTED_USER }}
+          BACKUP_EXPECTED_DB: ${{ vars.BACKUP_EXPECTED_DB }}
+          BACKUP_SOURCE_ID: ${{ vars.BACKUP_SOURCE_ID }}
+          RECIPIENT_PUBLIC_KEY_PEM: ${{ secrets.RECIPIENT_PUBLIC_KEY_PEM }}
+          RECIPIENT_PUBLIC_KEY_SHA256: ${{ vars.RECIPIENT_PUBLIC_KEY_SHA256 }}
+          DRIVE_CLIENT_ID: ${{ secrets.DRIVE_CLIENT_ID }}
+          DRIVE_CLIENT_SECRET: ${{ secrets.DRIVE_CLIENT_SECRET }}
+          DRIVE_REFRESH_TOKEN: ${{ secrets.DRIVE_REFRESH_TOKEN }}
+          DRIVE_FOLDER_ID: ${{ vars.DRIVE_FOLDER_ID }}
+          DRIVE_FOLDER_NAME: ${{ vars.DRIVE_FOLDER_NAME }}
+          DRIVE_FOLDER_MARKER: ${{ vars.DRIVE_FOLDER_MARKER }}
+          DRIVE_OWNER_EMAIL: ${{ vars.DRIVE_OWNER_EMAIL }}
+          BACKUP_HEARTBEAT_URL: ${{ secrets.BACKUP_HEARTBEAT_URL }}
+        run: node src/run.mjs production
