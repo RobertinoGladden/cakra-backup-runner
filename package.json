@@ -1,0 +1,13 @@
+{
+  "name": "cakra-backup-runner",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "boundary": "node src/boundary-probe.mjs",
+    "synthetic": "node src/run.mjs synthetic",
+    "backup": "node src/run.mjs production"
+  },
+  "engines": { "node": ">=22 <23" }
+}
